@@ -40,28 +40,27 @@ client.on("interactionCreate", async (interaction) => {
     });
 
     // Aspetta che la connessione sia pronta
-    connection.on("stateChange", (oldState, newState) => {
-      if (newState.status === "ready") {
-        const player = createAudioPlayer();
+connection.on("stateChange", (oldState, newState) => {
+  if (newState.status === "ready") {
+    const player = createAudioPlayer();
 
-        const playLoop = () => {
-          const resource = createAudioResource("./centrifuga.mp3");
-          player.play(resource);
-        };
+    const playLoop = () => {
+      const resource = createAudioResource(
+        fs.createReadStream("./centrifuga.mp3"),
+        { inputType: StreamType.Arbitrary }
+      );
+      player.play(resource);
+    };
 
-        // Avvia subito l'audio
-        playLoop();
-
-        // Loop infinito
-        player.on(AudioPlayerStatus.Idle, playLoop);
-
-        // Collega player alla connessione
-        connection.subscribe(player);
-      }
-    });
+    playLoop();
+    player.on(AudioPlayerStatus.Idle, playLoop);
+    connection.subscribe(player);
+  }
+});
 
     interaction.reply("🌀 **CENTRIFUGA AVVIATA** 🌀");
   }
 });
 
 client.login(process.env.TOKEN);
+
