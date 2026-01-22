@@ -4,47 +4,62 @@ const {
   joinVoiceChannel,
   createAudioPlayer,
   createAudioResource,
-  AudioPlayerStatus
+  AudioPlayerStatus,
 } = require("@discordjs/voice");
 
 const client = new Client({
   intents: [
     GatewayIntentBits.Guilds,
-    GatewayIntentBits.GuildVoiceStates
-  ]
+    GatewayIntentBits.GuildVoiceStates,
+  ],
 });
 
 client.once("ready", () => {
   console.log("🌀 Bot centrifuga ONLINE");
 });
 
-client.on("interactionCreate", async interaction => {
+client.on("interactionCreate", async (interaction) => {
   if (!interaction.isChatInputCommand()) return;
 
   if (interaction.commandName === "centrifuga") {
     const channel = interaction.member.voice.channel;
     if (!channel) {
-      return interaction.reply({ content: "Entra prima in un canale vocale 😤", ephemeral: true });
+      return interaction.reply({
+        content: "Entra prima in un canale vocale 😤",
+        ephemeral: true,
+      });
     }
 
+    // Entra nel canale vocale senza essere mutato o deaf
     const connection = joinVoiceChannel({
       channelId: channel.id,
       guildId: interaction.guild.id,
-      adapterCreator: interaction.guild.voiceAdapterCreator
+      adapterCreator: interaction.guild.voiceAdapterCreator,
+      selfDeaf: false,
+      selfMute: false,
     });
 
-    const player = createAudioPlayer();
+    // Aspetta che la connessione sia pronta
+    connection.on("stateChange", (oldState, newState) => {
+      if (newState.status === "ready") {
+        const player = createAudioPlayer();
 
-    const playLoop = () => {
-      const resource = createAudioResource("./centrifuga.mp3");
-      player.play(resource);
-    };
+        const playLoop = () => {
+          const resource = createAudioResource("./centrifuga.mp3");
+          player.play(resource);
+        };
 
-    playLoop();
+        // Avvia subito l'audio
+        playLoop();
 
-    player.on(AudioPlayerStatus.Idle, playLoop);
+        // Loop infinito
+        player.on(AudioPlayerStatus.Idle, playLoop);
 
-    connection.subscribe(player);
+        // Collega player alla connessione
+        connection.subscribe(player);
+      }
+    });
+
     interaction.reply("🌀 **CENTRIFUGA AVVIATA** 🌀");
   }
 });
